@@ -1,0 +1,166 @@
+---
+title: "PML Projet"
+author: "PML Student - MLO"
+date: "Saturday, June 20, 2015"
+version:  15-FNL
+output: html_document
+---
+## Prediction of Exercises Method from Accelerometer Data
+
+### Introduction
+This problem focuses on using a data set that has both incorrect and correct execution
+of several exercises.  Motion was measured by accelerometers attached to the body. belt, 
+forearm, arm, and dumbbell of 6 exercisers. They performed barbell lifts correctly and 
+incorrectly in five different ways.  The challenge is to build a classifier that identifies 
+the exercise form (one of five) used by each exerciser.  The data comes from 
+http://groupware.les.inf.puc-rio.br/har.
+
+### Program and Hardware
+The program selected to do the classification was based on the random forest classifier "rf" 
+operating on the specified accelerometer data from the data set.  The training set was used to 
+train the model using the caret package from R.  Compute time was more than expected (~ 15 minutes)
+but when the model was applied to the test data set, all test cases were resolved correctly.  
+Hardware used: Intel i7 4790 cpu, Intel Z97 chipset, 32 GB RAM, nVidia Titan X graphics.
+
+If you run the 'hidden' code, I have simply included a read.csv("url") which will place the 
+pml-training and pml-testing files in your current working directory. 
+
+I did create a feature plot of the predictor pairs for aldemo (commented out in the embedded code
+as it to several minutes of compute time) which was a colorful 12x12 array of dot plots that 
+showed the processing a classifier would have to do. Interesting that train(..., method="rf") 
+worked in the end for all of the test cases. I may become a believer.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# PML Project V11 Writeup
+setInternet2(TRUE)
+trainF <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+testF <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+library(caret); library(kernlab)
+pmlTrRaw <- data.frame(trainF)
+pmlTr <- subset(pmlTrRaw, select=c(2, 40:42, 63:65, 116:118, 154:156, 160))
+pmlTeRaw <- data.frame(testF)
+pmlTe <- subset(pmlTeRaw, select=c(2, 40:42, 63:65, 116:118, 154:156))
+
+##### "adelmo" ###########################################
+pmlTrad <- subset(pmlTr, subset=pmlTr$user_name=="adelmo")
+adelmoX <- pmlTrad[,c(2:14)]
+set.seed(1234)
+adFit <- train(adelmoX$classe ~., method="rf", data=adelmoX)
+adFit$finalModel #; adFit
+pmlTead <- subset(pmlTe, subset=pmlTe$user_name=="adelmo")
+predict(adFit, pmlTead)
+
+##### "carlitos" ###########################################
+pmlTrca <- subset(pmlTr, subset=pmlTr$user_name=="carlitos")
+carlitosX <- pmlTrca[,c(2:14)]
+set.seed(1234)
+caFit <- train(carlitosX$classe ~., method="rf", data=carlitosX)
+caFit$finalModel #; caFit
+pmlTeca <- subset(pmlTe, subset=pmlTe$user_name=="carlitos")
+predict(caFit, pmlTeca)
+
+##### "charles" ############################################
+pmlTrch <- subset(pmlTr, subset=pmlTr$user_name=="charles")
+charlesX <- pmlTrch[,c(2:14)]
+set.seed(1234)
+chFit <- train(charlesX$classe ~., method="rf", data=charlesX)
+chFit$finalModel #; chFit
+pmlTech <- subset(pmlTe, subset=pmlTe$user_name=="charles")
+predict(chFit, pmlTech)
+
+##### "eurico" ###########################################
+pmlTreu <- subset(pmlTr, subset=pmlTr$user_name=="eurico")
+euricoX <- pmlTreu[,c(2:14)]
+set.seed(1234)
+euFit <- train(euricoX$classe ~., method="rf", data=euricoX)
+euFit$finalModel #; euFit
+pmlTeeu <- subset(pmlTe, subset=pmlTe$user_name=="eurico")
+predict(euFit, pmlTeeu)
+
+##### "jeremy" ###########################################
+pmlTrje <- subset(pmlTr, subset=pmlTr$user_name=="jeremy")
+jeremyX <- pmlTrje[,c(2:14)]
+set.seed(1234)
+jeFit <- train(jeremyX$classe ~., method="rf", data=jeremyX)
+jeFit$finalModel #; jeFit
+pmlTeje <- subset(pmlTe, subset=pmlTe$user_name=="jeremy")
+predict(jeFit, pmlTeje)
+
+##### "pedro" ###########################################
+pmlTrpe <- subset(pmlTr, subset=pmlTr$user_name=="pedro")
+pedroX <- pmlTrpe[,c(2:14)]
+set.seed(1234)
+peFit <- train(pedroX$classe ~., method="rf", data=pedroX)
+peFit$finalModel #; peFit
+pmlTepe <- subset(pmlTe, subset=pmlTe$user_name=="pedro")
+predict(peFit, pmlTepe)
+```
+
+###Cross-Validation
+The training set was partitioned to create a cross-validation set of 
+training/test data using the createDataPartition() function from test subject jeremy. 
+
+
+```{r echo=FALSE}
+### Cross Validation Code  ## Depends upon code above
+jeremyX <- pmlTrje[,c(2:14)]
+### Run1
+set.seed(1234)
+inTrain.1 <- createDataPartition(y=jeremyX$classe, p=0.75, list=FALSE)
+trainJE.1 <- jeremyX[inTrain.1,]; testJE.1 <- jeremyX[-inTrain.1,]
+jeFit.1 <- train(trainJE.1$classe ~., method="rf", data=trainJE.1)
+jeFit.1$finalModel #; jeFit.1
+preJE.1 <- predict(jeFit.1, testJE.1) # ; preJE.1
+err.1 <- 1-sum(as.numeric(preJE.1==testJE.1$classe))/length(preJE.1)
+### Run 2
+set.seed(2345)
+inTrain.2 <- createDataPartition(y=jeremyX$classe, p=0.75, list=FALSE)
+trainJE.2 <- jeremyX[inTrain.2,]; testJE.2 <- jeremyX[-inTrain.2,]
+jeFit.2 <- train(trainJE.2$classe ~., method="rf", data=trainJE.2)
+jeFit.2$finalModel #; jeFit.2
+preJE.2 <- predict(jeFit.2, testJE.2) # ; preJE.2
+err.2 <- 1-sum(as.numeric(preJE.2==testJE.2$classe))/length(preJE.2)
+### Run 3
+set.seed(3456)
+inTrain.3 <- createDataPartition(y=jeremyX$classe, p=0.75, list=FALSE)
+trainJE.3 <- jeremyX[inTrain.3,]; testJE.3 <- jeremyX[-inTrain.3,]
+jeFit.3 <- train(trainJE.3$classe ~., method="rf", data=trainJE.3)
+jeFit.3$finalModel #; jeFit.3
+preJE.3 <- predict(jeFit.3, testJE.3) # ; preJE.3
+err.3 <- 1-sum(as.numeric(preJE.3==testJE.3$classe))/length(preJE.3)
+#  mean from comparison of prediction with truth for three trials
+est.error <- mean(c(mean(jeFit.1$finalModel$confusion[,6]), mean(jeFit.2$finalModel$confusion[,6]),
+                  mean(jeFit.3$finalModel$confusion[,6])))
+estP.error <- mean(c(err.1,err.2,err.3))
+# est.error;  estP.error
+
+```
+Three passes were averaged to derive estimates of data error, ~ 6.7 %, (`r est.error` from 
+finalModel$confusion and `r estP.error` from prediction versus truth).
+
+What follows is a feature plot by pairs for training data set of adelmo. This visually shows the challenge 
+faced by the classifier algorithm.
+
+```{r, echo=FALSE}
+featurePlot(x=adelmoX[,c(1:12)], y=adelmoX$classe, plot="pairs", auto.key = list(columns = 5))
+```
+
+### Conclusions and Remarks
+The good news:
+* The caret package with the random forest training method worked successfully to correctly match all 20 test cases.
+* The cross-validation suggested error rates in the six to seven per cent accuracy.
+
+Challenges:
+* Computation time for the random forest method was excessive in my opinion even with an above average 
+  personal computer. I probably should have done a principle components analysis to simplify variables.
+* There are way too many ways (for the novice especially) to be misled.  One example mean(x1, x2, x3) 
+  gives a different result from mean(c(x1, x2, x3)).   Add the black box nature of these model-fitting 
+  algorithms as implemented in caret, and you need to do a lot of checking of intermediate steps to make 
+  sure the results are sensible.  Hence, graphics, printout, and cross-validation are necessary to build 
+  confidence in your results.
+* I find official R documentation to be annoyingly obscure in most cases.  Web searching for answers 
+  such as including setInternet2(TRUE) before trying to knit a markdown file with a 
+  read.csv("https://...") is absolutely essential to fill in the explanation and examples gaps.
+* Finally, suggestions for improvement, especially faster processing are appreciated.  And yes, 
+  I could have used loops to reduce lines of code.  Maybe next time when I have more confidence 
+  that what's going on under the hood is what I expect.  You know, the black box munching mystery.
